@@ -19,7 +19,7 @@
         .btn-dark { width: 100%; padding: 16px; background: var(--accent); color: white; border: none; border-radius: 12px; font-weight: 700; font-size: 0.9rem; cursor: pointer; text-transform: uppercase; transition: 0.3s; }
         .btn-dark:disabled { background: #888; }
         .back-link { display: inline-block; margin-top: 20px; color: #666; text-decoration: none; font-size: 0.75rem; }
-        #status { font-size: 0.8rem; margin-top: 15px; color: #555; display: none; }
+        #status { font-size: 0.8rem; margin-top: 15px; color: #d9534f; display: none; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -54,51 +54,75 @@
         <input type="email" id="email">
         <button onclick="enviarParaN8N('salvar')" id="btnSalvar" class="btn-dark">Confirmar e Registrar</button>
     </div>
-    <div id="status">Processando...</div>
+
+    <div id="status"></div>
     <a href="index.html" class="back-link">← Cancelar e Voltar</a>
 </div>
 
 <script>
-// Máscara CNPJ
+// Máscara de CNPJ automática
 document.getElementById('cnpj').addEventListener('input', function (e) {
     var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})/);
     e.target.value = !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '/' + x[4] + (x[5] ? '-' + x[5] : '');
 });
 
-// FUNÇÃO UNIFICADA: Envia tudo para o mesmo Webhook
 async function enviarParaN8N(tipo) {
+    // IMPORTANTE: Troque para a sua URL de PRODUCTION quando o n8n estiver Ativo
     const webhookUrl = 'https://vissionlet.com/n8n/webhook-test/novo-cliente';
+    const statusDiv = document.getElementById('status');
     
     if (tipo === 'consultar') {
-        const cnpj = document.getElementById('cnpj').value.replace(/\D/g, '');
-        if(cnpj.length < 14) return alert('CNPJ inválido');
-        toggleLoading(true, 'btnConsultar', 'Buscando...');
+        const cnpjLimpo = document.getElementById('cnpj').value.replace(/\D/g, '');
+        if(cnpjLimpo.length < 14) return alert('Por favor, digite um CNPJ completo.');
         
+        toggleLoading(true, 'btnConsultar', 'Buscando...');
+        statusDiv.style.display = 'none';
+
         try {
             const response = await fetch(webhookUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ acao: 'consultar_cnpj', cnpj: cnpj })
+                body: JSON.stringify({ acao: 'consultar_cnpj', cnpj: cnpjLimpo })
             });
-            const dados = await response.json();
-            
-            // Preenche os campos
-            document.getElementById('razao_social').value = dados.nome || '';
-            document.getElementById('logradouro').value = dados.logradouro || '';
-            document.getElementById('numero').value = dados.numero || '';
-            document.getElementById('bairro').value = dados.bairro || '';
-            document.getElementById('cep').value = dados.cep || '';
-            document.getElementById('cidade').value = dados.cidade || '';
-            document.getElementById('uf').value = dados.estado || '';
-            document.getElementById('email').value = dados.email || '';
 
-            document.getElementById('passo1').classList.remove('active');
-            document.getElementById('passo2').classList.add('active');
-        } catch (err) { alert('Erro na consulta.'); }
-        finally { toggleLoading(false, 'btnConsultar', 'Buscar Dados'); }
+            if (!response.ok) throw new Error('Serviço indisponível');
+
+            const dadosTotal = await response.json();
+
+            // Se a API não encontrar (Erro 404 ou objeto vazio)
+            if (!dadosTotal.nome && !dadosTotal.estabelecimento) {
+                if (confirm("CNPJ não encontrado na base automática (comum para empresas novas). Deseja preencher manualmente?")) {
+                    irParaPasso2();
+                    return;
+                } else {
+                    throw new Error('CNPJ não localizado.');
+                }
+            }
+
+            // Mapeamento dos dados conforme a estrutura do IntegreMe
+            const est = dadosTotal.estabelecimento || {};
+            document.getElementById('razao_social').value = dadosTotal.nome || '';
+            document.getElementById('logradouro').value = est.logradouro || '';
+            document.getElementById('numero').value = est.numero || '';
+            document.getElementById('bairro').value = est.bairro || '';
+            document.getElementById('cep').value = est.cep || '';
+            document.getElementById('cidade').value = est.cidade?.nome || '';
+            document.getElementById('uf').value = est.estado?.sigla || '';
+            document.getElementById('email').value = est.email || '';
+
+            irParaPasso2();
+
+        } catch (err) {
+            alert('Atenção: ' + err.message);
+            statusDiv.innerText = "Erro ao buscar. Você pode tentar preencher manualmente.";
+            statusDiv.style.display = 'block';
+        } finally {
+            toggleLoading(false, 'btnConsultar', 'Buscar Dados');
+        }
 
     } else if (tipo === 'salvar') {
         toggleLoading(true, 'btnSalvar', 'Registrando...');
+        
         const payload = {
             acao: 'salvar_cliente',
             cnpj: document.getElementById('cnpj').value.replace(/\D/g, ''),
@@ -118,21 +142,30 @@ async function enviarParaN8N(tipo) {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+
             if(response.ok) {
-                alert('✅ Sucesso! Cliente no Asaas e na Planilha.');
+                alert('✅ Sucesso! Cliente registrado no Asaas e na Planilha.');
                 window.location.href = 'index.html';
+            } else {
+                alert('Erro ao registrar. Verifique os dados.');
             }
-        } catch (err) { alert('Erro ao salvar.'); }
-        finally { toggleLoading(false, 'btnSalvar', 'Confirmar e Registrar'); }
+        } catch (err) {
+            alert('Erro de conexão ao salvar.');
+        } finally {
+            toggleLoading(false, 'btnSalvar', 'Confirmar e Registrar');
+        }
     }
+}
+
+function irParaPasso2() {
+    document.getElementById('passo1').classList.remove('active');
+    document.getElementById('passo2').classList.add('active');
 }
 
 function toggleLoading(active, btnId, text) {
     const btn = document.getElementById(btnId);
-    const status = document.getElementById('status');
     btn.disabled = active;
     btn.innerText = text;
-    status.style.display = active ? 'block' : 'none';
 }
 </script>
 </body>
