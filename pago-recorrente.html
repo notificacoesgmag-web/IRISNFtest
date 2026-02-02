@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRIS - Quick Pay</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #cecece;
+            --card-bg: #ffffff;
+            --accent: #2b2b2b;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .container {
+            background: var(--card-bg);
+            padding: 30px;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
+            width: 100%;
+            max-width: 500px;
+            text-align: center;
+            border: 1px solid #000;
+        }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 4px;
+            font-size: 1.1rem;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+        }
+
+        /* Grade de Botões */
+        .grid-botoes {
+            display: grid;
+            grid-template-columns: 1fr 1fr; /* Duas colunas */
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .btn-empresa {
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            padding: 20px 10px;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-empresa:hover {
+            border-color: #000;
+            transform: translateY(-3px);
+            background: #fff;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+        }
+
+        .empresa-nome {
+            font-weight: 700;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            color: #000;
+        }
+
+        .empresa-valor {
+            font-size: 0.75rem;
+            color: #666;
+        }
+
+        .loading { font-size: 0.9rem; color: #888; grid-column: span 2; padding: 40px; }
+
+        .back-link {
+            text-decoration: none;
+            color: #888;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <img src="ChatGPT Image 29 de jan. de 2026, 09_46_46.png" style="width: 70px; margin-bottom: 15px;">
+    <h1>Pagos Recorrentes</h1>
+    
+    <div id="gridBotoes" class="grid-botoes">
+        <div class="loading">Carregando seus favoritos...</div>
+    </div>
+
+    <a href="cliente-existente.html" class="back-link">← VOLTAR</a>
+</div>
+
+<script>
+async function carregarBotoes() {
+    try {
+        const response = await fetch('SUA_URL_WEBHOOK_LISTA_RECORRENTES');
+        const empresas = await response.json();
+        const grid = document.getElementById('gridBotoes');
+        
+        if (empresas.length > 0) {
+            grid.innerHTML = empresas.map(e => `
+                <div class="btn-empresa" onclick="emitir('${e.asaas_id}', '${e.razao_social}')">
+                    <span style="font-size: 1.2rem;">🏢</span>
+                    <span class="empresa-nome">${e.razao_social}</span>
+                    <span class="empresa-valor">R$ ${e.valor}</span>
+                </div>
+            `).join('');
+        } else {
+            grid.innerHTML = '<div class="loading">Nenhum recorrente configurado no Sheets.</div>';
+        }
+    } catch (err) {
+        document.getElementById('gridBotoes').innerHTML = '<div class="loading">Erro ao conectar com n8n.</div>';
+    }
+}
+
+async function emitir(id, nome) {
+    if (!confirm(`Confirmar emissão para ${nome}?`)) return;
+
+    try {
+        const response = await fetch('SUA_URL_WEBHOOK_ACAO_N8N', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ acao: 'emitir_recorrente', cliente_id: id })
+        });
+
+        if (response.ok) {
+            alert('✅ Sucesso! Nota enviada.');
+            window.location.href = 'index.html';
+        }
+    } catch (err) {
+        alert('Erro ao emitir.');
+    }
+}
+
+carregarBotoes();
+</script>
+
+</body>
+</html>

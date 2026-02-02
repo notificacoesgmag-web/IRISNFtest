@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRIS - Recorrência</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #cecece;
+            --card-bg: #ffffff;
+            --accent: #2b2b2b;
+            --text-secondary: #000000;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(77, 73, 73, 0.5);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid #000000;
+        }
+
+        .logo-container { margin-bottom: 20px; }
+        .logo-img { width: 80px; }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 4px;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        select {
+            width: 100%;
+            padding: 15px;
+            background: #ffffff;
+            border: 1px solid #000000;
+            border-radius: 12px;
+            color: #000;
+            font-size: 0.9rem;
+            margin-bottom: 25px;
+            outline: none;
+            appearance: none;
+            cursor: pointer;
+        }
+
+        .btn-dark {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+        }
+
+        .btn-dark:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .btn-dark:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo-container">
+        <img src="ChatGPT Image 29 de jan. de 2026, 09_46_46.png" alt="IRIS" class="logo-img">
+    </div>
+    
+    <h1>Pagamentos Recorrentes</h1>
+    
+    <select id="listaEmpresas">
+        <option value="">Carregando empresas...</option>
+    </select>
+
+    <button onclick="emitirRecorrente()" id="btnEmitir" class="btn-dark">Emitir Agora</button>
+    
+    <a href="cliente-existente.html" class="back-link">← VOLTAR</a>
+</div>
+
+<script>
+// 1. Busca a lista de clientes do n8n que vem do Google Sheets
+async function carregarEmpresas() {
+    try {
+        const response = await fetch('SUA_URL_WEBHOOK_LISTA_N8N');
+        const empresas = await response.json();
+        const select = document.getElementById('listaEmpresas');
+        
+        if (empresas.length > 0) {
+            select.innerHTML = empresas.map(e => 
+                `<option value="${e.asaas_id}">${e.razao_social} - R$ ${e.valor_padrao || '0,00'}</option>`
+            ).join('');
+        } else {
+            select.innerHTML = '<option>Nenhuma empresa encontrada</option>';
+        }
+    } catch (err) {
+        console.error('Erro ao carregar empresas:', err);
+        document.getElementById('listaEmpresas').innerHTML = '<option>Erro ao carregar lista</option>';
+    }
+}
+
+// 2. Envia o ID selecionado para o n8n processar a nota no Asaas
+async function emitirRecorrente() {
+    const asaasId = document.getElementById('listaEmpresas').value;
+    const btn = document.getElementById('btnEmitir');
+
+    if (!asaasId) return;
+
+    btn.disabled = true;
+    btn.innerText = "PROCESSANDO...";
+
+    try {
+        const response = await fetch('SUA_URL_WEBHOOK_ACAO_N8N', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                acao: 'emitir_recorrente', 
+                cliente_id: asaasId 
+            })
+        });
+
+        if (response.ok) {
+            alert('Comando de emissão enviado para a IRIS!');
+            window.location.href = 'index.html';
+        }
+    } catch (err) {
+        alert('Erro ao conectar com o servidor.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Emitir Agora";
+    }
+}
+
+carregarEmpresas();
+</script>
+
+</body>
+</html>

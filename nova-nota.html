@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRIS - Nova Nota</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #cecece;
+            --card-bg: #ffffff;
+            --accent: #2b2b2b;
+            --text-secondary: #000000;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: #000;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(77, 73, 73, 0.5);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid #000000;
+        }
+
+        .logo-container { margin-bottom: 20px; }
+        .logo-img { width: 80px; }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 4px;
+            font-size: 1.1rem;
+            margin-bottom: 30px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .form-group {
+            text-align: left;
+            margin-bottom: 15px;
+        }
+
+        label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-left: 5px;
+            color: #555;
+        }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 15px;
+            background: #ffffff;
+            border: 1px solid #000000;
+            border-radius: 12px;
+            color: #000;
+            font-size: 0.9rem;
+            margin-top: 5px;
+            outline: none;
+            box-sizing: border-box;
+        }
+
+        textarea { resize: none; height: 80px; font-family: inherit; }
+
+        .btn-dark {
+            width: 100%;
+            padding: 16px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            margin-top: 10px;
+        }
+
+        .btn-dark:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            opacity: 0.6;
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo-container">
+        <img src="" alt="IRIS" class="logo-img">
+    </div>
+    
+    <h1>Nova Nota Avulsa</h1>
+    
+    <div class="form-group">
+        <label>Empresa Registrada</label>
+        <select id="listaEmpresas">
+            <option value="">Carregando lista...</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>Valor da Nota (R$)</label>
+        <input type="number" id="valor" placeholder="Ex: 1500.00" step="0.01">
+    </div>
+
+    <div class="form-group">
+        <label>Descrição do Serviço</label>
+        <textarea id="descricao" placeholder="Descreva o serviço prestado..."></textarea>
+    </div>
+
+    <button onclick="emitirNotaAvulsa()" id="btnEmitir" class="btn-dark">Gerar Nota Fiscal</button>
+    
+    <a href="cliente-existente.html" class="back-link">← VOLTAR</a>
+</div>
+
+<script>
+// Busca a lista de clientes para preencher o Select
+async function carregarEmpresas() {
+    try {
+        const response = await fetch('SUA_URL_WEBHOOK_LISTA_N8N');
+        const empresas = await response.json();
+        const select = document.getElementById('listaEmpresas');
+        
+        if (empresas.length > 0) {
+            select.innerHTML = '<option value="">Selecione a empresa...</option>' + 
+            empresas.map(e => `<option value="${e.asaas_id}">${e.razao_social}</option>`).join('');
+        }
+    } catch (err) {
+        document.getElementById('listaEmpresas').innerHTML = '<option>Erro ao carregar</option>';
+    }
+}
+
+async function emitirNotaAvulsa() {
+    const id = document.getElementById('listaEmpresas').value;
+    const valor = document.getElementById('valor').value;
+    const desc = document.getElementById('descricao').value;
+    const btn = document.getElementById('btnEmitir');
+
+    if (!id || !valor || !desc) {
+        alert('Por favor, preencha todos os campos.');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerText = "ENVIANDO...";
+
+    try {
+        const response = await fetch('SUA_URL_WEBHOOK_ACAO_N8N', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                acao: 'emitir_avulsa', 
+                cliente_id: id,
+                valor: valor,
+                descricao: desc
+            })
+        });
+
+        if (response.ok) {
+            alert('Nota avulsa enviada para processamento!');
+            window.location.href = 'index.html';
+        }
+    } catch (err) {
+        alert('Erro na conexão.');
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "Gerar Nota Fiscal";
+    }
+}
+
+carregarEmpresas();
+</script>
+
+</body>
+</html>

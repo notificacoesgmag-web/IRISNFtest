@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IRIS - Opções de Nota</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #cecece;
+            --card-bg: #ffffff;
+            --accent: #2b2b2b;
+            --text-secondary: #000000;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: #000; /* Ajustado para legibilidade no tema claro */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .card {
+            background: var(--card-bg);
+            padding: 40px 30px;
+            border-radius: 28px;
+            box-shadow: 0 20px 50px rgba(77, 73, 73, 0.5);
+            text-align: center;
+            width: 100%;
+            max-width: 380px;
+            border: 1px solid #000000;
+            transition: transform 0.3s ease;
+        }
+
+        .logo-container { margin-bottom: 20px; }
+        .logo-img { width: 80px; }
+
+        h1 {
+            font-weight: 300;
+            letter-spacing: 4px;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            color: var(--accent);
+            text-transform: uppercase;
+        }
+
+        .menu-options {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .btn-menu {
+            width: 100%;
+            padding: 18px;
+            background: var(--card-bg);
+            color: var(--accent);
+            border: 1px solid #000;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 0.85rem;
+            cursor: pointer;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-sizing: border-box;
+        }
+
+        .btn-menu.primary {
+            background: var(--accent);
+            color: #ffffff;
+            border: none;
+        }
+
+        .btn-menu:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .btn-menu:active { transform: translateY(0); }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            font-weight: 500;
+            transition: opacity 0.3s;
+        }
+
+        .back-link:hover { opacity: 0.7; }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="logo-container">
+        <img src="ChatGPT Image 29 de jan. de 2026, 09_46_46.png" alt="IRIS" class="logo-img">
+    </div>
+    
+    <h1>Opções de Nota</h1>
+    
+    <div class="menu-options">
+        <a href="pago-recorrente.html" class="btn-menu primary">
+            <span>🔄</span> Pago Recorrente
+        </a>
+        
+        <a href="nova-nota.html" class="btn-menu">
+            <span>📄</span> Nova Nota Fiscal
+        </a>
+    </div>
+
+    <a href="index.html" class="back-link">← VOLTAR AO INÍCIO</a>
+</div>
+
+</body>
+</html>
