@@ -60,14 +60,12 @@
 </div>
 
 <script>
-// Máscara de CNPJ automática
 document.getElementById('cnpj').addEventListener('input', function (e) {
     var x = e.target.value.replace(/\D/g, '').match(/(\d{0,2})(\d{0,3})(\d{0,3})(\d{0,4})(\d{0,2})/);
     e.target.value = !x[2] ? x[1] : x[1] + '.' + x[2] + '.' + x[3] + '/' + x[4] + (x[5] ? '-' + x[5] : '');
 });
 
 async function enviarParaN8N(tipo) {
-    // IMPORTANTE: Troque para a sua URL de PRODUCTION quando o n8n estiver Ativo
     const webhookUrl = 'https://vissionlet.com/n8n/webhook-test/novo-cliente';
     const statusDiv = document.getElementById('status');
     
@@ -85,44 +83,43 @@ async function enviarParaN8N(tipo) {
                 body: JSON.stringify({ acao: 'consultar_cnpj', cnpj: cnpjLimpo })
             });
 
-            if (!response.ok) throw new Error('Serviço indisponível');
-
-            const dadosTotal = await response.json();
-
-            // Se a API não encontrar (Erro 404 ou objeto vazio)
-            if (!dadosTotal.nome && !dadosTotal.estabelecimento) {
-                if (confirm("CNPJ não encontrado na base automática (comum para empresas novas). Deseja preencher manualmente?")) {
-                    irParaPasso2();
-                    return;
-                } else {
-                    throw new Error('CNPJ não localizado.');
-                }
+            // TRATAMENTO DE ERRO: Se o n8n enviar 404 (Respond to Webhook1)
+            if (response.status === 404) {
+                const erroDados = await response.json();
+                throw new Error(erroDados.erro || "CNPJ não encontrado.");
             }
 
-            // Mapeamento dos dados conforme a estrutura do IntegreMe
-            const est = dadosTotal.estabelecimento || {};
-            document.getElementById('razao_social').value = dadosTotal.nome || '';
-            document.getElementById('logradouro').value = est.logradouro || '';
-            document.getElementById('numero').value = est.numero || '';
-            document.getElementById('bairro').value = est.bairro || '';
-            document.getElementById('cep').value = est.cep || '';
-            document.getElementById('cidade').value = est.cidade?.nome || '';
-            document.getElementById('uf').value = est.estado?.sigla || '';
-            document.getElementById('email').value = est.email || '';
+            if (!response.ok) throw new Error('Serviço temporariamente indisponível.');
+
+            const dados = await response.json();
+
+            // Preenchimento baseado na resposta de sucesso do seu n8n
+            document.getElementById('razao_social').value = dados.nome || '';
+            document.getElementById('logradouro').value = dados.logradouro || '';
+            document.getElementById('numero').value = dados.numero || '';
+            document.getElementById('bairro').value = dados.bairro || '';
+            document.getElementById('cep').value = dados.cep || '';
+            document.getElementById('cidade').value = dados.cidade || '';
+            document.getElementById('uf').value = dados.estado || '';
+            document.getElementById('email').value = dados.email || '';
 
             irParaPasso2();
 
         } catch (err) {
+            // Se der erro, avisa o usuário e oferece preenchimento manual
             alert('Atenção: ' + err.message);
-            statusDiv.innerText = "Erro ao buscar. Você pode tentar preencher manualmente.";
-            statusDiv.style.display = 'block';
+            if (confirm("Deseja preencher os dados manualmente para continuar?")) {
+                irParaPasso2();
+            } else {
+                statusDiv.innerText = err.message;
+                statusDiv.style.display = 'block';
+            }
         } finally {
             toggleLoading(false, 'btnConsultar', 'Buscar Dados');
         }
 
     } else if (tipo === 'salvar') {
         toggleLoading(true, 'btnSalvar', 'Registrando...');
-        
         const payload = {
             acao: 'salvar_cliente',
             cnpj: document.getElementById('cnpj').value.replace(/\D/g, ''),
@@ -147,7 +144,7 @@ async function enviarParaN8N(tipo) {
                 alert('✅ Sucesso! Cliente registrado no Asaas e na Planilha.');
                 window.location.href = 'index.html';
             } else {
-                alert('Erro ao registrar. Verifique os dados.');
+                alert('Erro ao registrar no Asaas. Verifique os dados e tente novamente.');
             }
         } catch (err) {
             alert('Erro de conexão ao salvar.');
