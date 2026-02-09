@@ -68,7 +68,7 @@ document.getElementById('cnpj').addEventListener('input', function (e) {
 
 async function enviarParaN8N(tipo) {
     const urlConsulta = 'https://vissionlet.com/n8n/webhook/cliente novo';
-    const urlRegistro = 'https://vissionlet.com/n8n/webhook-test/registro-final-asaas';
+    const urlRegistro = 'https://vissionlet.com/n8n/webhook-test/vercnpj';
 
     if (tipo === 'consultar') {
         const cnpjLimpo = document.getElementById('cnpj').value.replace(/\D/g, '');
@@ -158,4 +158,5 @@ function toggleLoading(active, btnId, text) {
 </body>
 
 </html>
+
 
